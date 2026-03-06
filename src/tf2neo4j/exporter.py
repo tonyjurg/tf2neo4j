@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any, Iterable, Iterator, Mapping, Sequence
+from urllib.parse import urlparse, urlunparse
 
 from neo4j import GraphDatabase
 from tf.fabric import Fabric
@@ -153,6 +154,48 @@ def _load_tf_api(config: TFExportConfig) -> Any:
     return api
 
 
+def _is_local_uri(uri: str) -> bool:
+    host = urlparse(uri).hostname
+    return host in {"localhost", "127.0.0.1", "::1"}
+
+
+def _local_bolt_fallback(uri: str) -> str | None:
+    parsed = urlparse(uri)
+    if not parsed.scheme.startswith("neo4j"):
+        return None
+    if not _is_local_uri(uri):
+        return None
+    return urlunparse(parsed._replace(scheme="bolt"))
+
+
+def _connect_driver(config: TFExportConfig):
+    auth = (config.neo4j_user, config.neo4j_password)
+    uris = [config.neo4j_uri]
+    fallback_uri = _local_bolt_fallback(config.neo4j_uri)
+    if fallback_uri and fallback_uri not in uris:
+        uris.append(fallback_uri)
+
+    last_error: Exception | None = None
+    for uri in uris:
+        driver = GraphDatabase.driver(uri, auth=auth)
+        try:
+            driver.verify_connectivity()
+            return driver, uri
+        except Exception as exc:
+            last_error = exc
+            driver.close()
+
+    uri_hint = ""
+    if config.neo4j_uri.startswith("neo4j://") and _is_local_uri(config.neo4j_uri):
+        uri_hint = (
+            " For local single-instance Neo4j Desktop/Server, use a direct URI like "
+            "'bolt://localhost:7687' instead of 'neo4j://...'."
+        )
+    raise RuntimeError(
+        f"Neo4j connection failed for URI '{config.neo4j_uri}'.{uri_hint}"
+    ) from last_error
+
+
 def export_text_fabric_to_neo4j(config: TFExportConfig) -> ExportStats:
     """Copy Text-Fabric nodes and edge features into Neo4j."""
     api = _load_tf_api(config)
@@ -178,7 +221,8 @@ def export_text_fabric_to_neo4j(config: TFExportConfig) -> ExportStats:
     """
 
     stats = ExportStats()
-    with GraphDatabase.driver(config.neo4j_uri, auth=(config.neo4j_user, config.neo4j_password)) as driver:
+    driver, _ = _connect_driver(config)
+    with driver:
         with driver.session(database=config.neo4j_database) as session:
             if config.clear_database:
                 session.run("MATCH (n) DETACH DELETE n")
