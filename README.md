@@ -4,9 +4,14 @@ Jupyter-first tool to export a Text-Fabric dataset into Neo4j.
 
 ## What it does
 
-- Creates/updates `(:TFNode {tf_id, otype, ...features})` for TF nodes
-- Creates/updates `[:TF_EDGE {name, ...props}]` for TF edge-features
-- Supports batched writes and optional full database clear before import
+- Creates/updates typed TF nodes as `(:<tf_otype> {tf_id, otype, ...features})` (no shared `:TFNode` label)
+- Creates one Neo4j relationship type per TF edge-feature
+- Optional: converts `frame` roles into semantic relations
+  (`A0->HAS_AGENT`, `A1->HAS_PATIENT`, `A2->HAS_RECIPIENT`, `AA2->HAS_ADVERBIAL`)
+- Optional: creates locality-based hierarchy edges `[:TF_HIERARCHY]` from a provided ordered type list
+- Optional: adds sequential `[:NEXT]` and `[:PREVIOUS]` relationships for selected TF node types
+- Supports batched writes and optional batched full database clear before import
+- Shows progress during long exports (optional `tqdm`, with print fallback)
 
 ## Quick start
 
@@ -36,6 +41,14 @@ config = TFExportConfig(
     edge_features=None,   # None => all edge features
     batch_size=2000,
     clear_database=False,
+    clear_batch_size=10000,
+    add_previous_next=False,
+    previous_next_node_types=["verse", "word", "book", "chapter"],
+    hierarchy_node_types=["book", "chapter", "verse", "word"],
+    frame_semantic_relations=True,
+    show_progress=True,
+    progress_use_tqdm=True,
+    progress_every=50000,
 )
 
 stats = export_text_fabric_to_neo4j(config)
