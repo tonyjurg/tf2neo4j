@@ -46,6 +46,7 @@ class TFExportConfig:
 
 
 FRAME_ROLE_MAP: dict[str, tuple[str, str]] = {
+    # Relation direction is always source(frame owner) -> target(argument node).
     "A0": ("HAS_AGENT", "agent"),
     "A1": ("HAS_PATIENT", "patient"),
     "A2": ("HAS_RECIPIENT", "recipient"),
@@ -80,9 +81,11 @@ class _ProgressCounter:
             try:
                 from tqdm.auto import tqdm
 
+                # Prefer tqdm when available for a smooth in-place progress display.
                 self._bar = tqdm(total=total, desc=label, unit=unit, leave=False)
                 return
             except Exception:
+                # Fall back to plain prints if tqdm is unavailable/misconfigured.
                 self._bar = None
         print(f"[tf2neo4j] {label} started")
 
@@ -188,6 +191,7 @@ def _iter_tf_nodes(api: Any) -> Iterator[int]:
     otype = api.F.otype
     max_node = getattr(otype, "maxNode", None)
     if isinstance(max_node, int) and max_node > 0:
+        # Fast path: contiguous node-id range.
         for node in range(1, max_node + 1):
             if otype.v(node) is not None:
                 yield node
@@ -216,6 +220,7 @@ def _group_node_ids_by_otype(
     node_ids: Sequence[int], node_otypes: Mapping[int, str]
 ) -> dict[str, list[int]]:
     """Group node ids by otype while preserving original order."""
+    # Order is important for NEXT/PREVIOUS links.
     grouped: dict[str, list[int]] = {}
     for node_id in node_ids:
         otype = node_otypes.get(node_id)
@@ -324,6 +329,7 @@ def _iter_hierarchy_relationships(
         if node_otypes.get(parent) != parent_otype:
             continue
         try:
+            # Locality downward lookup: embeddees of requested otype inside parent.
             children = locality.d(parent, otype=child_otype)
         except Exception:
             continue
@@ -344,6 +350,7 @@ def _iter_hierarchy_relationships(
                 "props": {
                     "parent_otype": parent_otype,
                     "child_otype": child_otype,
+                    # Preserve provenance so relation semantics are explicit in Neo4j.
                     "source_api": "tf.L.d",
                 },
             }
@@ -432,6 +439,7 @@ def _iter_edge_feature_relationships(
             yield {
                 "source": source,
                 "target": target,
+                # Carry labels now so MATCH clauses can stay label-selective (faster).
                 "source_otype": source_otype,
                 "target_otype": target_otype,
                 "rel_key": f"{edge_name}:{source}:{target}",
@@ -534,6 +542,7 @@ def _flush_node_batch(session: Any, otype: str, rows: list[dict[str, Any]], use_
         return 0
     escaped_label = _escape_cypher_identifier(otype)
     if use_merge:
+        # Incremental mode: keep/upsert existing nodes.
         query = f"""
         UNWIND $rows AS row
         MERGE (n:`{escaped_label}` {{tf_id: row.tf_id}})
@@ -541,6 +550,7 @@ def _flush_node_batch(session: Any, otype: str, rows: list[dict[str, Any]], use_
         REMOVE n:TFNode
         """
     else:
+        # Fresh-load mode: CREATE is faster after a full clear.
         query = f"""
         UNWIND $rows AS row
         CREATE (n:`{escaped_label}` {{tf_id: row.tf_id}})
@@ -599,6 +609,7 @@ def _write_relationships(
         source_label = _escape_cypher_identifier(source_otype)
         target_label = _escape_cypher_identifier(target_otype)
         if use_merge:
+            # Merge by rel_key so repeated runs are idempotent.
             query = f"""
             UNWIND $rows AS row
             MATCH (s:`{source_label}` {{tf_id: row.source}})
@@ -607,6 +618,7 @@ def _write_relationships(
             SET r += row.props
             """
         else:
+            # Fresh-load mode avoids MERGE overhead.
             query = f"""
             UNWIND $rows AS row
             MATCH (s:`{source_label}` {{tf_id: row.source}})
@@ -650,6 +662,7 @@ def _write_mixed_relationship_types(
 ) -> int:
     """Write rows that carry their own relationship type in `relationship_type`."""
     written = 0
+    # Group by (relation type + source label + target label) for indexed MATCHes.
     buffered: dict[tuple[str, str, str], list[dict[str, Any]]] = {}
 
     def flush_group(
@@ -768,12 +781,15 @@ def _load_tf_api(config: TFExportConfig) -> Any:
     requested = " ".join(requested_node_features + requested_edge_features).strip()
 
     if requested:
+        # Load only requested features when caller provided a list.
         api = tf.load(requested, silent=tf_silent)
     else:
         load_all = getattr(tf, "loadAll", None)
         if callable(load_all):
+            # Preferred full-load API if available in this TF version.
             api = load_all(silent=tf_silent)
         else:
+            # Backward-compatible fallback.
             api = tf.load("", silent=tf_silent)
 
     if not api:
@@ -910,6 +926,7 @@ def export_text_fabric_to_neo4j(config: TFExportConfig) -> ExportStats:
                         edge_counter.close()
 
             if config.hierarchy_node_types is not None:
+                # Ordered hierarchy list drives adjacent parent->child links.
                 selected_hierarchy_types, missing_hierarchy_types = _resolve_previous_next_types(
                     config.hierarchy_node_types, list(node_ids_by_otype.keys())
                 )
@@ -952,6 +969,7 @@ def export_text_fabric_to_neo4j(config: TFExportConfig) -> ExportStats:
                     progress.log("Hierarchy list has fewer than two valid node types")
 
             if config.add_previous_next:
+                # Build sequences independently per selected otype.
                 selected_link_types, missing_link_types = _resolve_previous_next_types(
                     config.previous_next_node_types, list(node_ids_by_otype.keys())
                 )
