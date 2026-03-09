@@ -1,6 +1,9 @@
+[![Project Status: Concept – Minimal or no implementation has been done yet, or the repository is only intended to be a limited example, demo, or proof-of-concept.](https://www.repostatus.org/badges/latest/concept.svg)](https://www.repostatus.org/#concept)
+  [![License: CC BY 4.0](https://img.shields.io/badge/License-CC_BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
+
 # tf2neo4j
 
-Jupyter-first tool to export a Text-Fabric dataset into Neo4j.
+Jupyter NoteBook: first tool to export a Text-Fabric dataset into Neo4j. The code is more or less generic, although certain parts are tweaked towards the [N1904-TF](https://centerblc.github.io/N1904/) dataset.
 
 ## What it does
 
@@ -54,3 +57,9 @@ config = TFExportConfig(
 stats = export_text_fabric_to_neo4j(config)
 print(stats)
 ```
+
+## Cypher Query example
+
+The Graph can be examined in (for example) the neo4j desktop.  This is an example using the N1904-TF feature [frame](https://centerblc.github.io/N1904/features/frame.html#start) being converted into relations indicating Agent, Patient, etc.
+
+<img src="images/screenshot.png">
