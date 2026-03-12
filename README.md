@@ -5,6 +5,16 @@
 
 Jupyter NoteBook: first tool to export a Text-Fabric dataset into Neo4j. The code is more or less generic, although certain parts are tweaked towards the [N1904-TF](https://centerblc.github.io/N1904/) dataset.
 
+## Documentation
+
+Additional docs are available in [`docs/`](./docs/README.md) describing the following aspects:
+
+- Architecture
+- Quick start
+- Configuration reference
+- Graph model
+- Troubleshooting
+
 ## What it does
 
 - Creates/updates typed TF nodes as `(:<tf_otype> {tf_id, otype, ...features})` (no shared `:TFNode` label)
@@ -63,3 +73,9 @@ print(stats)
 The Graph can be examined in (for example) the neo4j desktop.  This is an example using the N1904-TF feature [frame](https://centerblc.github.io/N1904/features/frame.html#start) being converted into relations indicating Agent, Patient, etc.
 
 <img src="images/screenshot.png">
+
+---
+
+## Disclosure
+
+Parts of this repository (code, refactoring, and documentation) were created or improved with assistance from OpenAI Codex.
