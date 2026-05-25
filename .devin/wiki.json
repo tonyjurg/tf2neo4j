@@ -1,0 +1,173 @@
+{
+  "repo_notes": [
+    {
+      "content": ""
+    }
+  ],
+  "pages": [
+    {
+      "title": "Overview",
+      "purpose": "High-level introduction to tf2neo4j: what it does, why it exists, key concepts, and how the major components relate. Links to child pages for deeper coverage.",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Getting Started",
+      "purpose": "Step-by-step guide for new users: installing dependencies, starting Jupyter, configuring credentials, and running the first export. Covers requirements.txt and the quick-start workflow.",
+      "parent": "Overview",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "System Architecture",
+      "purpose": "End-to-end architectural overview of the ETL pipeline: how data flows from a Text-Fabric dataset through the exporter into Neo4j, with reference to the Mermaid flowchart in docs/architecture.md.",
+      "parent": "Overview",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Core Exporter",
+      "purpose": "Overview of the src/tf2neo4j Python package — its public API, internal structure, and lifecycle. Links to child pages covering configuration, the node pipeline, and the relation pipeline.",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "TFExportConfig Reference",
+      "purpose": "Detailed reference for every field of the TFExportConfig dataclass: data-source paths, Neo4j connection parameters, feature selection filters, performance tuning knobs, and verbosity controls.",
+      "parent": "Core Exporter",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Node Pipeline",
+      "purpose": "How TF nodes are extracted, grouped by otype, and written to Neo4j as labeled nodes with tf_id and feature properties. Covers _iter_tf_nodes, _collect_node_otypes, _write_nodes, schema constraint creation, and batching strategy.",
+      "parent": "Core Exporter",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Relation Pipeline",
+      "purpose": "Deep dive into all four relationship-generation paths: generic TF edge features, frame-semantic role mapping, locality-based TF_HIERARCHY, and type-scoped NEXT/PREVIOUS sequence links. Covers label-aware batching and the fresh-load vs. incremental write modes.",
+      "parent": "Core Exporter",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Graph Model",
+      "purpose": "Overview of the Neo4j property graph schema produced by tf2neo4j: node labels, relationship types, and the three optional relationship families. Links to child pages for nodes and relationships.",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Node Schema",
+      "purpose": "Specification of how TF nodes map to Neo4j nodes: otype-as-label convention, the tf_id unique property, feature-to-property mapping, and the uniqueness constraints created per label.",
+      "parent": "Graph Model",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Relationship Schema",
+      "purpose": "Specification of all relationship types in the graph: standard TF edge-feature relationships, TF_HIERARCHY containment links, NEXT/PREVIOUS sequential links, and the frame-semantic HAS_AGENT / HAS_PATIENT / HAS_RECIPIENT / HAS_ADVERBIAL relationships. Includes suggested Cypher validation queries.",
+      "parent": "Graph Model",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Jupyter Notebook Interface",
+      "purpose": "Guide to using notebooks/tf_to_neo4j.ipynb as the primary user-facing execution environment: cell structure, environment variable setup via python-dotenv, running the export, and interpreting ExportStats output.",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Notebook Configuration and Execution",
+      "purpose": "Step-by-step walkthrough of the notebook cells: loading credentials from .env, constructing TFExportConfig, calling export_text_fabric_to_neo4j, and reading the returned stats object.",
+      "parent": "Jupyter Notebook Interface",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Progress Monitoring",
+      "purpose": "How the _ProgressReporter and _ProgressCounter classes provide real-time feedback during long exports, including tqdm integration, print-fallback behavior, and the progress_every interval setting.",
+      "parent": "Jupyter Notebook Interface",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Operations and Troubleshooting",
+      "purpose": "Operational guidance for running tf2neo4j in production: performance tuning, memory management, connectivity configuration, and known issues. Links to child pages for performance and connectivity.",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Performance Tuning",
+      "purpose": "How to tune batch_size and clear_batch_size to avoid MemoryPoolOutOfMemoryError, when to use CLEAR_DATABASE for a fresh load vs. incremental reruns, and the role of Neo4j constraints/indexes in import speed.",
+      "parent": "Operations and Troubleshooting",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Connectivity and Schema Issues",
+      "purpose": "Resolving Neo4j connection errors (bolt:// vs neo4j:// URI schemes, local vs. remote instances), the _connect_driver fallback mechanism, and handling legacy TFNode label warnings.",
+      "parent": "Operations and Troubleshooting",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Glossary",
+      "purpose": "Definitions of all codebase-specific terms, abbreviations, and domain concepts that an onboarding engineer needs to know, with code pointers to relevant files and functions.",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    }
+  ]
+}
